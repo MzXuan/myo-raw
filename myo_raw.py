@@ -287,8 +287,10 @@ class MyoRaw(object):
                 acc = vals[4:7]
                 gyro = vals[7:10]
                 self.on_imu(quat, acc, gyro)
+            # elif attr == 0x23:
+            #     typ, val, xdir = unpack('3B', pay)
             elif attr == 0x23:
-                typ, val, xdir = unpack('3B', pay)
+                typ, val, xdir, _, _, _ = unpack('6B', pay)
 
                 if typ == 1: # on arm
                     self.on_arm(Arm(val), XDirection(xdir))
