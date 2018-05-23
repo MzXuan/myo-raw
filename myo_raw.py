@@ -405,14 +405,17 @@ if __name__ == '__main__':
         import pygame
         from pygame.locals import *
         HAVE_PYGAME = True
+        # print ("successful impot pygame")
     except ImportError:
         HAVE_PYGAME = False
 
     if HAVE_PYGAME:
         w, h = 1200, 400
         scr = pygame.display.set_mode((w, h))
+        scr2 = pygame.display.set_mode((w, h))
 
     last_vals = None
+    last_vals_imu = None
     def plot(scr, vals):
         DRAW_LINES = False
 
@@ -441,6 +444,40 @@ if __name__ == '__main__':
 
     m = MyoRaw(sys.argv[1] if len(sys.argv) >= 2 else None)
 
+    def plot_imu(scr,vals):
+        global last_vals_imu
+        if last_vals_imu is None:
+            last_vals_imu = vals
+            return
+
+        D = 5
+        scr.scroll(-D)
+        scr.fill((0, 0, 0), (w - D, 0, w, h))
+        for i, (u, v) in enumerate(zip(last_vals_imu, vals)):
+            pygame.draw.line(scr, (0, 255, 0),
+                             (w - D, int(h / 6 * (i +2 - u))),
+                             (w, int(h / 6 * (i +2 - v))))
+            pygame.draw.line(scr, (255, 255, 255),
+                             (w - D, int(h / 6 * (i +2))),
+                             (w, int(h / 6 * (i +2))))
+
+        pygame.display.flip()
+        last_vals_imu = vals
+
+    def proc_imu(quat,acc,gyro,times = []):
+        if HAVE_PYGAME:
+            ## update pygame display
+            plot_imu(scr2, [t / 10000. for t in quat])
+
+        print(quat)
+
+        ## print framerate of received data
+        times.append(time.time())
+        if len(times) > 20:
+            #print((len(times) - 1) / (times[-1] - times[0]))
+            times.pop(0)
+
+
     def proc_emg(emg, moving, times=[]):
         if HAVE_PYGAME:
             ## update pygame display
@@ -454,11 +491,16 @@ if __name__ == '__main__':
             #print((len(times) - 1) / (times[-1] - times[0]))
             times.pop(0)
 
-    m.add_emg_handler(proc_emg)
+
     m.connect()
+    # m.add_emg_handler(proc_emg)
+    m.add_imu_handler(proc_imu)
 
     m.add_arm_handler(lambda arm, xdir: print('arm', arm, 'xdir', xdir))
     m.add_pose_handler(lambda p: print('pose', p))
+
+    # m.add_imu_handler(lambda quat, acc, gyro: print('quat', quat, 'acc', acc, 'gyro', gyro))
+
 
     try:
         while True:
