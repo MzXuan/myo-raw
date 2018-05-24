@@ -1,28 +1,19 @@
+#!/usr/bin/env python
+#title           :record_data.py
+#description     :This will record data of different gesture, and save to pkl for future classification
+#author          :ZHAO Xuan
+#date            :2018-05-24
+#=============================================================================
+
 from __future__ import print_function
 from collections import Counter, deque
 import sys
-import time
+import os
+import pickle
 
 import numpy as np
 
-from common import *
 from myo_raw import MyoRaw
-
-# from pynput import keyboard
-#
-#
-# class KeyDetection():
-#     def __init__(self):
-#         self.break_program = False
-#
-#     def on_press(self,key):
-#         print (key)
-#         if key == keyboard.Key.enter:
-#             print ('enter pressed')
-#         if key == keyboard.Key.esc:
-#             print ('end pressed')
-#             self.break_program = True
-#             return False
 
 
 try:
@@ -31,8 +22,6 @@ try:
     HAVE_PYGAME = True
 except ImportError:
     HAVE_PYGAME = False
-
-
 
 
 #TODO: EMG handler
@@ -51,15 +40,13 @@ class DataHandler(object):
         self.quat = quat
         # print ('quat: ', quat)
 
-    # TODO: save to file
 
-
-
-        # if self.recording >= 0:
-        #     self.m.cls.store_data(self.recording, emg)
-
-# def write_file(emg, quat, cls):
-
+def write_file(data, file_name):
+    # emg: data[1] ; imu: data[2]; cls: data[3]
+    print ("write to pkl")
+    with open(file_name,'ab') as output:
+        pickle.dump(data, output, pickle.HIGHEST_PROTOCOL)
+    # TODO:  write file (txt) function
 
 
 
@@ -70,17 +57,14 @@ if __name__ == '__main__':
         scr = pygame.display.set_mode((w, h))
         font = pygame.font.Font(None, 30)
 
-
+    file_path = './data_set/'
+    file_name = os.path.join(file_path, 'data.pkl')
 
     m = MyoRaw(sys.argv[1] if len(sys.argv) >= 2 else None)
     hnd = DataHandler(m)
     m.add_emg_handler(hnd.on_emg)
     m.add_imu_handler(hnd.on_imu)
     m.connect()
-
-    emg_list = []
-    quat_list = []
-    cls_list = []
 
     data_list = []
 
@@ -105,30 +89,16 @@ if __name__ == '__main__':
                             print("recording data: ", temp_data)
 
                         # TODO: save data
-                        # elif ev.unicode == 's':
-                            #hnd.cl.read_data()
+                        elif ev.unicode == 's':
+                            write_file(data_list,file_name)
+                            data_list[:] = []
+
                     elif ev.type == KEYUP:
                         if K_0 <= ev.key <= K_9 or K_KP0 <= ev.key <= K_KP9:
                             hnd.recording = -1
-
 
     except KeyboardInterrupt:
         pass
     finally:
         m.disconnect()
         print()
-
-    # key = KeyDetection()
-    # lis = keyboard.Listener(on_press=key.on_press)
-    # lis.start()
-
-    # try:
-    #
-    #     while True:
-    #         m.run()
-    #         lis.join()
-    # except KeyboardInterrupt:
-    #     pass
-    # finally:
-    #     m.disconnect()
-    #     print()
