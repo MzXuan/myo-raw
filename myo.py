@@ -100,6 +100,7 @@ if __name__ == '__main__':
     import subprocess
     m = Myo(NNClassifier(), sys.argv[1] if len(sys.argv) >= 2 else None)
     m.add_raw_pose_handler(print)
+    m.add_imu_handler(lambda quat, acc, gyro: print('quat', quat, 'acc', acc, 'gyro', gyro))
 
     def page(pose):
         if pose == 5:
